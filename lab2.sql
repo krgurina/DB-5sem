@@ -1,5 +1,4 @@
 alter session set "_ORACLE_SCRIPT"= true;
-alter session set container=XEPDB1;
 
 GRANT SELECT ANY DICTIONARY TO KRISTINA;
 GRANT CREATE ROLE TO KRISTINA;
@@ -10,6 +9,7 @@ GRANT DBA TO KRISTINA;
 GRANT SYSDBA TO KRISTINA;
 GRANT SYSOPER TO KRISTINA;
 
+
 --1 Создайте табличное пространство для постоянных данных
 create tablespace TS_GKS
 datafile 'TS_GKS'
@@ -18,7 +18,7 @@ reuse
 autoextend on next 5M maxsize 20M;
 
 SELECT tablespace_name, file_name, bytes, autoextensible, maxbytes
-FROM dba_data_files
+FROM dba_data_files;
 -- WHERE tablespace_name = 'TS_GKS';
 
 -- 2 Создайте табличное пространство для временных данных
@@ -53,17 +53,6 @@ SELECT * FROM dba_role_privs WHERE granted_role = 'RL_GKSCORE';
 --select * from DBA_SYS_PRIVS where grantee='KRISTINA';
 
 -- 6 Создайте профиль безопасности с именем PF_XXXCORE, имеющий опции, аналогичные примеру из лекции.
-
-CREATE PROFILE PF_GKSCORE LIMIT
-    PASSWORD_LIFE_TIME 180          -- количество дней жизни пароля
-    SESSIONS_PER_USER 3             -- количество сессий для пользователя
-    FAILED_LOGIN_ATTEMPTS 7         -- количество попыток входа
-    PASSWORD_LOCK_TIME 1            -- количество дней блокирования после ошибок
-    PASSWORD_REUSE_TIME 10          -- через сколько дней можно повторить пароль
-    PASSWORD_GRACE_TIME 14     -- количество дней предупреждений о смене пароля
-    CONNECT_TIME 180                -- время соединения, минут
-    IDLE_TIME 30;                    -- количество минут простоя
-
 CREATE PROFILE PF_GKSCORE LIMIT
     PASSWORD_LIFE_TIME 180          -- количество дней жизни пароля
     SESSIONS_PER_USER 3             -- количество сессий для пользователя
@@ -73,16 +62,6 @@ CREATE PROFILE PF_GKSCORE LIMIT
     PASSWORD_GRACE_TIME DEFAULT        -- количество дней предупреждений о смене пароля
     CONNECT_TIME 180                -- время соединения, минут
     IDLE_TIME 30;                   -- количество минут простоя
-
-create profile PF_GKSCORE limit
-    password_life_time 180          -- количество дней жизни пароля
-    sessions_per_user 3             -- количество сессий для пользователя
-    failed_login_attempts 7         -- количество попыток входа
-    password_lock_time 1            -- количество дней блокирования после ошибок
-    password_reuse_time 10          -- через сколько дней можно повторить пароль
-    password_grace_time default     -- количество дней предупреждений о смене пароля
-    connect_time 180                -- время соединения, минут
-    idle_time 30;                   -- количество минут простоя
 
 
 
@@ -97,30 +76,70 @@ select * from DBA_PROFILES where PROFILE='PF_GKSCORE'; -- не работает
 select * from DBA_PROFILES where PROFILE='DEFAULT';
 
 -- 8 Создайте пользователя с именем XXXCORE
-create user GKSCORE identified by GKSCORE           -- ! после by указывается пароль
+create user GKSCORE identified by GKSCORE
     default tablespace TS_GKS
     temporary tablespace TS_GKS_TEMP
+    profile DEFAULT
     account unlock
     password expire;
 
 -- 10 Создайте соединение с помощью SQL Developer для пользователя XXXCORE. Создайте любую таблицу и любое представление
 grant connect, create session, create any table, drop any table, create any view to GKSCORE;
+GRANT UNLIMITED TABLESPACE TO GKSCORE;
+-- GRANT SELECT ON GKS_t TO GKSCORE;
+-- GRANT INSERT ON GKS_t TO GKSCORE;
+-- GRANT INSERT ON TS_GKS TO GKSCORE;
+-- GRANT SELECT ANY DICTIONARY TO GKSCORE;
 
 create table GKS_t
 (
     x number(3) primary key,
     s varchar2(50)
 );
-drop table GKS_t;
 
 insert into GKS_t (x, s) values (1, 'apple');
 insert into GKS_t (x, s) values (2, 'banana');
 insert into GKS_t (x, s) values (3, 'kivi');
 commit;
 
+create view GKSCORE_V as select s from GKS_t where x = 1;
+select * from GKSCORE_V;
 
-drop tablespace TS_GKS;
-drop tablespace TS_GKS_TEMP;
+-- 11 . Создайте табличное пространство с именем XXX_QDATA (10m).
+-- При создании установите его в состояние offline. Затем переведите табличное пространство в состояние online.
+-- Выделите пользователю XXX квоту 2m в пространстве XXX_QDATA.
+create tablespace GKS_QDATA OFFLINE
+  datafile 'GKS_QDATA'
+  size 10M reuse
+  autoextend on next 5M
+  maxsize 20M;
+
+alter tablespace GKS_QDATA online;
+
+alter user GKSCORE QUOTA 2M ON GKS_QDATA;
+
+create table GKS_t1
+(
+    x number(3) primary key,
+    s varchar2(50)
+) TABLESPACE GKS_QDATA;
+
+insert into GKS_t1 (x, s) values (1, 'apple');
+insert into GKS_t1 (x, s) values (2, 'banana');
+insert into GKS_t1 (x, s) values (3, 'kivi');
+commit;
+
+select * from GKS_T1;
+
+drop table GKS_t;
+drop table GKS_t1;
+drop view GKSCORE_V;
+
+drop profile PF_GKSCORE;
+drop tablespace TS_GKS INCLUDING CONTENTS AND DATAFILES;
+drop tablespace TS_GKS_TEMP INCLUDING CONTENTS AND DATAFILES;
+drop tablespace GKS_QDATA INCLUDING CONTENTS AND DATAFILES;
+drop user GKSCORE cascade;
 
 
 
