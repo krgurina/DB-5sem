@@ -12,40 +12,41 @@ GRANT SYSOPER TO KRISTINA;
 
 --1 Создайте табличное пространство для постоянных данных
 create tablespace TS_GKS
-datafile 'TS_GKS'
-size 7M
-reuse
-autoextend on next 5M maxsize 20M;
+    datafile 'TS_GKS'
+    size 7M
+    reuse
+    autoextend on
+    next 5M
+    maxsize 20M;
 
 SELECT tablespace_name, file_name, bytes, autoextensible, maxbytes
-FROM dba_data_files;
--- WHERE tablespace_name = 'TS_GKS';
+FROM dba_data_files
+WHERE tablespace_name = 'TS_GKS';
 
 -- 2 Создайте табличное пространство для временных данных
 create temporary tablespace TS_GKS_TEMP
-tempfile 'TS_GKS_TEMP'
-size 5M
-reuse
-autoextend on next 3M maxsize 30M;
+    tempfile 'TS_GKS_TEMP'
+    size 5M
+    reuse
+    autoextend on
+    next 3M
+    maxsize 30M;
 
 -- 3 Получите список всех табличных пространств, списки всех файлов с помощью select-запроса к словарю
 SELECT  TABLESPACE_NAME from dba_tablespaces;
-SELECT  TABLESPACE_NAME, FILE_NAME from DBA_DATA_FILES
+SELECT  TABLESPACE_NAME, FILE_NAME from DBA_DATA_FILES;
 
 -- 4 Создайте роль с именем RL_XXXCORE. Назначьте ей следующие системные привилегии:
 CREATE ROLE RL_GKSCORE;
 
 GRANT CREATE SESSION TO RL_GKSCORE; -- разрешение на соединение с сервером
-
 GRANT CREATE TABLE TO RL_GKSCORE;
 GRANT CREATE VIEW TO RL_GKSCORE;
 GRANT CREATE PROCEDURE TO RL_GKSCORE;
---GRANT CREATE FUNCTION TO RL_GKSCORE;
 
 GRANT DROP any TABLE TO RL_GKSCORE;
 GRANT DROP any VIEW TO RL_GKSCORE;
 GRANT DROP any PROCEDURE TO RL_GKSCORE;
---GRANT DROP any FUNCTION TO RL_GKSCORE;
 
 -- 5 Найдите с помощью select-запроса роль в словаре. Найдите с помощью select-запроса все системные привилегии, назначенные роли.
 SELECT * FROM dba_roles WHERE role = 'RL_GKSCORE';
@@ -72,7 +73,7 @@ CREATE PROFILE PF_GKSCORE LIMIT
 -- Получите значения всех параметров профиля PF_XXXCORE.
 -- Получите значения всех параметров профиля DEFAULT.
 select * from DBA_PROFILES;
-select * from DBA_PROFILES where PROFILE='PF_GKSCORE'; -- не работает
+select * from DBA_PROFILES where PROFILE='PF_GKSCORE';
 select * from DBA_PROFILES where PROFILE='DEFAULT';
 
 -- 8 Создайте пользователя с именем XXXCORE
@@ -83,7 +84,8 @@ create user GKSCORE identified by GKSCORE
     account unlock
     password expire;
 
--- 10 Создайте соединение с помощью SQL Developer для пользователя XXXCORE. Создайте любую таблицу и любое представление
+-- 10 Создайте соединение с помощью SQL Developer для пользователя XXXCORE.
+-- Создайте любую таблицу и любое представление
 grant connect, create session, create any table, drop any table, create any view to GKSCORE;
 GRANT UNLIMITED TABLESPACE TO GKSCORE;
 -- GRANT SELECT ON GKS_t TO GKSCORE;
@@ -130,6 +132,8 @@ insert into GKS_t1 (x, s) values (3, 'kivi');
 commit;
 
 select * from GKS_T1;
+
+drop role RL_GKSCORE;
 
 drop table GKS_t;
 drop table GKS_t1;
