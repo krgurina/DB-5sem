@@ -3,7 +3,7 @@ alter session set nls_date_format='dd-mm-yyyy hh24:mi:ss';
 
 
 --1. Создайте таблицу, имеющую несколько атрибутов, один из которых первичный ключ.
---drop table T1
+--  drop table T1
 
 create table GKS.T1
 (
@@ -187,7 +187,6 @@ begin
 end;
 
 select * from AUDITT;
---truncate table AUDITS;
 
 -- 11.	Выполните операцию, нарушающую целостность таблицы по первичному ключу.
 -- Выясните, зарегистрировал ли триггер это событие. Объясните результат.
@@ -239,3 +238,14 @@ end INSTEAD_OF_INSERT_TRIGGER;
 
 select * from T1_V;
 insert into T1_V values (22, 'qqq');
+
+
+
+
+
+
+
+
+
+
+--truncate table AUDITS;
